@@ -7,7 +7,7 @@ from sklearn.linear_model import Ridge, LinearRegression
 from sklearn.pipeline import Pipeline
 import scipy
 import pickle
-# pd.options.display.max_colwidth=300
+pd.options.display.max_colwidth=300
 
 df = pd.read_csv(
     "input/jigsaw-toxic-comment-classification-challenge/train.csv")
@@ -68,3 +68,22 @@ df_val['p2'] = p2
 df_val['diff'] = np.abs(p2 - p1)
 
 df_val['correct'] = (p1 < p2).astype('int')
+### Incorrect predictions with similar scores
+print(df_val[df_val.correct == 0].sort_values('diff', ascending=True).head(20))
+
+# print(df_val[df_val.correct == 0].sort_values('diff', ascending=False).head(20))
+
+
+# Predict on test data
+df_sub = pd.read_csv("input/jigsaw-toxic-severity-rating/comments_to_score.csv")
+# Predict using pipeline
+sub_preds = pipeline.predict(df_sub['text'])
+df_sub['score'] = sub_preds
+# Cases with duplicates scores
+df_sub['score'].count() - df_sub['score'].nunique()
+df_sub['score'].value_counts().reset_index()[:10]
+df_sub['score'].rank().nunique()
+# Rank the predictions 
+df_sub['score']  = scipy.stats.rankdata(df_sub['score'], method='ordinal')
+print(df_sub['score'].rank().nunique())
+df_sub[['comment_id', 'score']].to_csv("output/jigsaw-toxic-comment-classification-challenge/submission.csv", index=False)
